@@ -34,6 +34,7 @@ dependencies = [
     "json-repair>=0.44.0",
     "markdown>=3.7",
     "redis[hiredis]>=5.0.0",
+    "httpx[socks]>=0.28.0",
 ]
 
 [project.scripts]
