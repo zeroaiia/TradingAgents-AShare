@@ -3,13 +3,18 @@
 import logging
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Generator
 
 from sqlalchemy import Boolean, create_engine, Column, String, DateTime, Text, Integer, Float, JSON, UniqueConstraint, event, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
-# Database URL - default to SQLite for simplicity
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./tradingagents.db")
+# Ensure data directory exists
+DATA_DIR = Path("data")
+DATA_DIR.mkdir(exist_ok=True)
+
+# Database URL - default to SQLite in data directory
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATA_DIR}/tradingagents.db")
 
 # Create engine
 if DATABASE_URL.startswith("sqlite"):
@@ -25,9 +30,8 @@ if DATABASE_URL.startswith("sqlite"):
 
     def _can_use_wal() -> bool:
         """Check if WAL mode is safe: db's parent dir must be writable for -shm/-wal files."""
-        import pathlib
         db_path = DATABASE_URL.replace("sqlite:///", "").replace("sqlite://", "")
-        parent = pathlib.Path(db_path).resolve().parent
+        parent = Path(db_path).resolve().parent
         return os.access(parent, os.W_OK)
 
     _use_wal = _can_use_wal()

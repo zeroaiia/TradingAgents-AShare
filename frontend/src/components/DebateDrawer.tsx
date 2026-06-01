@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { useAnalysisStore } from '@/stores/analysisStore'
 import DebateTimeline from './DebateTimeline'
@@ -8,17 +8,17 @@ const DEBATE_TITLES: Record<string, { title: string; emoji: string }> = {
     risk: { title: '风控三方辩论', emoji: '🔥⚖️🛡️' },
 }
 
-const DEBATE_PARTICIPANTS: Record<string, { emoji: string; label: string; cls: string }[]> = {
+const DEBATE_PARTICIPANTS: Record<string, { emoji: string; label: string; cls: string; agent: string }[]> = {
     research: [
-        { emoji: '🐂', label: '多头', cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
-        { emoji: '🐻', label: '空头', cls: 'bg-rose-500/15 text-rose-400 border-rose-500/30' },
-        { emoji: '🏛️', label: '研究总监', cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
+        { emoji: '🐂', label: '多头', cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', agent: 'Bull Researcher' },
+        { emoji: '🐻', label: '空头', cls: 'bg-rose-500/15 text-rose-400 border-rose-500/30', agent: 'Bear Researcher' },
+        { emoji: '🏛️', label: '研究总监', cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30', agent: 'Research Manager' },
     ],
     risk: [
-        { emoji: '🔥', label: '激进', cls: 'bg-red-500/15 text-red-400 border-red-500/30' },
-        { emoji: '⚖️', label: '中性', cls: 'bg-slate-500/15 text-slate-400 border-slate-500/30' },
-        { emoji: '🛡️', label: '稳健', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
-        { emoji: '🏛️', label: '风控', cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
+        { emoji: '🔥', label: '激进', cls: 'bg-red-500/15 text-red-400 border-red-500/30', agent: 'Aggressive Analyst' },
+        { emoji: '⚖️', label: '中性', cls: 'bg-slate-500/15 text-slate-400 border-slate-500/30', agent: 'Neutral Analyst' },
+        { emoji: '🛡️', label: '稳健', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30', agent: 'Conservative Analyst' },
+        { emoji: '🏛️', label: '风控', cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30', agent: 'Portfolio Manager' },
     ],
 }
 
@@ -32,9 +32,18 @@ export default function DebateDrawer({ debate, onClose }: DebateDrawerProps) {
     const scrollTick = useAnalysisStore(s => s.debateScrollTick)
     const scrollRef = useRef<HTMLDivElement>(null)
     const userScrolledUp = useRef(false)
+    const [scrollToAgent, setScrollToAgent] = useState<string | null>(null)
+
     const messages = debate ? (debateMessages[debate] || []) : []
     const meta = debate ? DEBATE_TITLES[debate] : null
     const participants = debate ? DEBATE_PARTICIPANTS[debate] : []
+
+    // 处理点击参与者标签
+    const handleParticipantClick = useCallback((agent: string) => {
+        setScrollToAgent(agent)
+        // 延迟清除，让滚动有时间执行
+        setTimeout(() => setScrollToAgent(null), 100)
+    }, [])
 
     // Escape key to close
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -91,16 +100,21 @@ export default function DebateDrawer({ debate, onClose }: DebateDrawerProps) {
                 {/* Participant pills */}
                 <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-800/50">
                     {participants.map(p => (
-                        <span key={p.label} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${p.cls}`}>
+                        <button
+                            key={p.label}
+                            onClick={() => handleParticipantClick(p.agent)}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all hover:scale-105 active:scale-95 cursor-pointer ${p.cls}`}
+                            title={`跳转到${p.label}的发言`}
+                        >
                             <span>{p.emoji}</span>
                             <span>{p.label}</span>
-                        </span>
+                        </button>
                     ))}
                 </div>
 
                 {/* Scrollable timeline */}
                 <div ref={scrollRef} onScroll={handleScroll} className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
-                    <DebateTimeline messages={messages} debate={debate} />
+                    <DebateTimeline messages={messages} debate={debate} scrollToAgent={scrollToAgent} />
                 </div>
             </div>
         </>

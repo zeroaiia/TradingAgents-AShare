@@ -238,9 +238,18 @@ deploy/
 .DS_Store
 .vscode/
 /plans/
+
+# Database files (root directory - legacy)
 tradingagents.db
 tradingagents.db-shm
 tradingagents.db-wal
+
+# Database files (data directory)
+/data/*.db
+/data/*.db-shm
+/data/*.db-wal
+/data/tradingagents.db
+
 deploy/deploy.env
 
 .playwright-cli/
@@ -254,3 +263,4 @@ uv.lock.cp313
 .worktrees/
 /CLAUDE.md
 /.claude/worktrees/
+/data/

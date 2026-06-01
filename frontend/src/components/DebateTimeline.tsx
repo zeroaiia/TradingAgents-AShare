@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { useEffect, useRef } from 'react'
 import type { DebateMessage } from '@/types'
 
 // Agent metadata for debate participants
@@ -16,9 +17,23 @@ const DEBATE_AGENT_META: Record<string, { emoji: string; label: string; dotCls: 
 interface DebateTimelineProps {
     messages: DebateMessage[]
     debate: 'research' | 'risk'
+    scrollToAgent?: string | null  // 新增：需要滚动到的 agent
 }
 
-export default function DebateTimeline({ messages, debate }: DebateTimelineProps) {
+export default function DebateTimeline({ messages, debate, scrollToAgent }: DebateTimelineProps) {
+    // 存储每个 agent 的第一条消息元素引用
+    const agentMessageRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+
+    // 当 scrollToAgent 变化时，滚动到对应 agent 的第一条消息
+    useEffect(() => {
+        if (!scrollToAgent) return
+
+        const targetElement = agentMessageRefs.current.get(scrollToAgent)
+        if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+    }, [scrollToAgent])
+
     if (messages.length === 0) {
         return (
             <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
@@ -66,8 +81,17 @@ export default function DebateTimeline({ messages, debate }: DebateTimelineProps
                                 emoji: '💬', label: msg.agent, dotCls: 'bg-slate-500',
                                 borderCls: 'border-slate-500/30', bgCls: 'bg-slate-500/5', textCls: 'text-slate-400',
                             }
+                            const isFirstFromAgent = !agentMessageRefs.current.has(msg.agent)
                             return (
-                                <div key={`${round}-${msg.agent}-${i}`} className="relative">
+                                <div
+                                    key={`${round}-${msg.agent}-${i}`}
+                                    ref={(el) => {
+                                        if (el && isFirstFromAgent) {
+                                            agentMessageRefs.current.set(msg.agent, el)
+                                        }
+                                    }}
+                                    className="relative"
+                                >
                                     {/* Timeline dot */}
                                     <div className={`absolute -left-4 top-3 w-2.5 h-2.5 rounded-full ${meta.dotCls} ring-2 ring-slate-900 z-10`} />
 
