@@ -86,7 +86,8 @@ export default function Settings() {
     )
 
     const effectiveProvider = selectedPreset.provider
-    const effectiveBaseUrl = selectedPreset.editableBaseUrl ? customBaseUrl.trim() : selectedPreset.baseUrl
+    // 优先使用用户填写的 customBaseUrl，否则使用预设的 baseUrl（如果有）
+    const effectiveBaseUrl = customBaseUrl.trim() || selectedPreset.baseUrl
     useEffect(() => {
         setWarmupResults([])
         setWarmupError(null)
@@ -369,26 +370,25 @@ export default function Settings() {
                         </div>
                     </div>
 
-                    {(selectedPreset.baseUrl || selectedPreset.editableBaseUrl) && (
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                                Base URL
-                            </label>
-                            <input
-                                type="text"
-                                value={selectedPreset.editableBaseUrl ? customBaseUrl : selectedPreset.baseUrl}
-                                onChange={e => setCustomBaseUrl(e.target.value)}
-                                className="input w-full"
-                                disabled={configLoading || !selectedPreset.editableBaseUrl}
-                                placeholder="https://your-openai-compatible-endpoint/v1"
-                            />
-                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                {selectedPreset.editableBaseUrl
-                                    ? '自定义 OpenAI 兼容服务需要自行填写 Base URL。'
-                                    : '该厂商默认通过预设的 OpenAI 兼容地址接入，通常只需填写模型名和 API Key。'}
-                            </p>
-                        </div>
-                    )}
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                            Base URL
+                            <span className="ml-1 text-xs text-slate-400 font-normal">（可选）留空使用默认地址</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={customBaseUrl || selectedPreset.baseUrl}
+                            onChange={e => setCustomBaseUrl(e.target.value)}
+                            className="input w-full"
+                            disabled={configLoading}
+                            placeholder={selectedPreset.baseUrl || 'https://your-openai-compatible-endpoint/v1'}
+                        />
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            {selectedPreset.baseUrl
+                                ? `默认地址：${selectedPreset.baseUrl}（如需自建代理或使用其他地址，可在此填写）`
+                                : '该厂商无预设地址，请填写完整的 API 端点 URL。'}
+                        </p>
+                    </div>
 
                     <div>
                         <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
