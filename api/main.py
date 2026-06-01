@@ -41,7 +41,7 @@ import pandas as pd
 
 from api.database import UserDB, UserLLMConfigDB, VersionStatsDB, ReportDB, ImportedPortfolioPositionDB, FeedbackDB, SponsorDB, init_db, get_db, get_db_ctx
 from api.job_store import get_job_store as _new_job_store
-from api.services import auth_service, portfolio_import_service, report_service, token_service, watchlist_service, scheduled_service, tracking_board_service, feedback_service, sponsor_service
+from api.services import auth_service, portfolio_import_service, report_service, token_service, watchlist_service, scheduled_service, tracking_board_service, feedback_service, sponsor_service, settings_service
 
 def _get_real_ip(request: Request) -> Optional[str]:
     """Extract real client IP, preferring Cloudflare/proxy headers."""
@@ -77,10 +77,6 @@ def _cors_allow_origins() -> list[str]:
     default_origins = [
         "http://127.0.0.1:5174",
         "http://localhost:5174",
-        "http://127.0.0.1:5175",
-        "http://localhost:5175",
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
     ]
     if not raw:
         return default_origins
@@ -250,7 +246,7 @@ async def lifespan(app: FastAPI):
         _log("is INSECURE. Set TA_APP_SECRET_KEY env var before production use.")
         _log("=" * 70)
 
-    _report_version_stats()
+    # _report_version_stats()
     # Pre-load trade calendar (uses mini_racer/V8 which is not thread-safe)
     from tradingagents.dataflows.trade_calendar import _load_cn_trade_dates
     _load_cn_trade_dates()
@@ -4505,6 +4501,111 @@ def mark_feedback_read(
     if not fb:
         raise HTTPException(404, "未找到该反馈")
     return {"ok": True}
+
+
+# ─── Settings Routes (Tushare Data Source) ─────────────────────────────────────
+
+class TushareConfigRequest(BaseModel):
+    """Tushare 配置请求"""
+    enabled: bool
+    tushare_token: str
+    timeout: int = 30
+    max_retries: int = 3
+    tushare_url: str = "https://api.tushare.pro"
+    rate_limit: Optional[int] = None
+
+
+class TestConnectionRequest(BaseModel):
+    """测试连接请求"""
+    config: TushareConfigRequest
+
+
+@app.post("/api/settings/tushare")
+async def save_tushare_config(
+    request: TushareConfigRequest,
+    current_user: UserDB = Depends(_require_web_user),
+    db: Session = Depends(get_db),
+):
+    """
+    保存 Tushare 配置
+
+    Args:
+        request: Tushare 配置请求
+        current_user: 当前用户
+        db: 数据库会话
+
+    Returns:
+        保存结果
+    """
+    try:
+        success = settings_service.save_tushare_config(request.dict())
+        if success:
+            return {"success": True, "message": "配置已保存"}
+        else:
+            raise HTTPException(status_code=500, detail="保存失败")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/settings/tushare/test")
+async def test_tushare_connection(
+    request: TestConnectionRequest,
+    current_user: UserDB = Depends(_require_web_user),
+):
+    """
+    测试 Tushare 连接
+
+    Args:
+        request: 测试请求
+        current_user: 当前用户
+
+    Returns:
+        测试结果
+    """
+    try:
+        result = settings_service.test_tushare_connection(request.config.dict())
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/settings/tushare")
+async def get_tushare_config(
+    current_user: UserDB = Depends(_require_web_user),
+):
+    """
+    获取 Tushare 配置
+
+    Args:
+        current_user: 当前用户
+
+    Returns:
+        Tushare 配置（不含 token 明文）
+    """
+    try:
+        return settings_service.get_tushare_config()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/settings/data-sources/status")
+async def get_data_sources_status(
+    current_user: UserDB = Depends(_require_web_user),
+):
+    """
+    获取所有数据源状态
+
+    Args:
+        current_user: 当前用户
+
+    Returns:
+        数据源状态列表
+    """
+    try:
+        statuses = settings_service.get_data_sources_status()
+        return {"sources": statuses}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 from fastapi.staticfiles import StaticFiles

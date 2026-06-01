@@ -1,4 +1,4 @@
-import type { AnalysisRequest, AnalysisResponse, Announcement, AuthUser, AuthVerifyResponse, JobStatus, AnalysisReport, KlineResponse, LatestAnnouncementResponse, PortfolioImportState, PortfolioOverviewResponse, PortfolioPositionInput, Report, ReportDetail, ReportListResponse, RuntimeConfig, RuntimeConfigUpdate, RuntimeConfigUpdateResponse, RuntimeWarmupRequest, RuntimeWarmupResponse, WatchlistItem, WatchlistBatchResponse, ScheduledAnalysis, ScheduledBatchTriggerResponse, StockSearchResult, TrackingBoardResponse, UserToken, UserTokenCreateRequest, WecomWarmupRequest, WecomWarmupResponse, FeedbackItem, FeedbackListResponse, FeedbackUnreadResponse } from '@/types'
+import type { AnalysisRequest, AnalysisResponse, Announcement, AuthUser, AuthVerifyResponse, JobStatus, AnalysisReport, KlineResponse, LatestAnnouncementResponse, PortfolioImportState, PortfolioOverviewResponse, PortfolioPositionInput, Report, ReportDetail, ReportListResponse, RuntimeConfig, RuntimeConfigUpdate, RuntimeConfigUpdateResponse, RuntimeWarmupRequest, RuntimeWarmupResponse, WatchlistItem, WatchlistBatchResponse, ScheduledAnalysis, ScheduledBatchTriggerResponse, StockSearchResult, TrackingBoardResponse, UserToken, UserTokenCreateRequest, WecomWarmupRequest, WecomWarmupResponse, FeedbackItem, FeedbackListResponse, FeedbackUnreadResponse, TushareConfig, TestResult, DataSourcesStatusResponse } from '@/types'
 
 export function getBaseUrl(): string {
     const envUrl = (import.meta.env.VITE_API_URL as string) || ''
@@ -344,6 +344,29 @@ class ApiService {
 
     async markFeedbackRead(id: string): Promise<void> {
         return this.request<void>(`/v1/feedbacks/${id}/read`, { method: 'POST' })
+    }
+
+    // Settings API Methods
+    async saveTushareConfig(config: TushareConfig): Promise<{ message: string }> {
+        return this.request<{ message: string }>('/api/settings/tushare', {
+            method: 'POST',
+            body: JSON.stringify(config),
+        })
+    }
+
+    async getTushareConfig(): Promise<TushareConfig & { has_token?: boolean }> {
+        return this.request<TushareConfig & { has_token?: boolean }>('/api/settings/tushare')
+    }
+
+    async testTushareConnection(config: TushareConfig): Promise<TestResult> {
+        return this.request<TestResult>('/api/settings/tushare/test', {
+            method: 'POST',
+            body: JSON.stringify({ config }),
+        })
+    }
+
+    async getDataSourcesStatus(): Promise<DataSourcesStatusResponse> {
+        return this.request<DataSourcesStatusResponse>('/api/settings/data-sources/status')
     }
 }
 

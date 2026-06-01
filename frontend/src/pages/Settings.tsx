@@ -3,6 +3,8 @@ import { Save, Key, Database, Loader2, Trash2, Link2, Copy, Plus, CheckCircle2, 
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
 import type { RuntimeWarmupResult, UserToken } from '@/types'
+import { TushareSettingsCard } from '@/components/settings/TushareSettingsCard'
+import { DataSourceStatusCard } from '@/components/settings/DataSourceStatusCard'
 
 type ProviderPreset = {
     id: string
@@ -767,6 +769,16 @@ export default function Settings() {
                         </div>
                     )}
                 </div>
+            </div>
+
+            <div className="card space-y-4">
+                <div className="flex items-center gap-2">
+                    <Database className="w-5 h-5 text-indigo-500" />
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">数据源配置</h2>
+                </div>
+
+                <TushareSettingsCard />
+                <DataSourceStatusCard />
             </div>
 
             <div className="flex items-center gap-4">

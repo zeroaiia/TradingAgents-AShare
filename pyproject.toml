@@ -35,6 +35,7 @@ dependencies = [
     "markdown>=3.7",
     "redis[hiredis]>=5.0.0",
     "httpx[socks]>=0.28.0",
+    "tushare>=1.4.0",
 ]
 
 [project.scripts]
